@@ -7,14 +7,24 @@
   <title>Nutella Tracker</title>
   <link rel="stylesheet" href="style.css" />
   <link rel="icon"
-    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍫</text></svg>" />
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect x='9' y='3' width='14' height='4' rx='1' fill='%23e8e8e8'/><rect x='10' y='7' width='12' height='3' fill='%23c0392b'/><path d='M8 10h16v17a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2z' fill='%236d4326'/><rect x='11' y='14' width='10' height='9' rx='1' fill='%23f5f1ec'/><text x='16' y='21' font-size='6' text-anchor='middle' fill='%236d4326' font-family='sans-serif' font-weight='bold'>N</text></svg>" />
   <!-- Chart.js (clientseitige Diagramme) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 </head>
 
 <body>
   <header>
-    <h1>🍫 Nutella Tracker</h1>
+    <h1>
+      <svg class="logo" viewBox="0 0 32 32" aria-hidden="true">
+        <rect x="9" y="3" width="14" height="4" rx="1" fill="#e8e8e8" />
+        <rect x="10" y="7" width="12" height="3" fill="#c0392b" />
+        <path d="M8 10h16v17a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2z" fill="#fff" />
+        <rect x="11" y="13" width="10" height="11" rx="1" fill="#6d4326" />
+        <text x="16" y="21" font-size="7" text-anchor="middle" fill="#f5f1ec" font-family="sans-serif"
+          font-weight="bold">N</text>
+      </svg>
+      Nutella Tracker
+    </h1>
     <div class="jar-select">
       <label for="jarSelect">Glas:</label>
       <select id="jarSelect"></select>
@@ -24,10 +34,49 @@
   </header>
 
   <main>
+    <!-- Zeitliche Einordnung im Gesamtzeitraum -->
+    <section id="timelineSection" class="card hidden">
+      <div class="timeline-head">
+        <h2>Zeitlicher Verlauf</h2>
+        <span id="timelinePercent" class="timeline-percent"></span>
+      </div>
+      <div class="timeline">
+        <div class="timeline-bar">
+          <div id="timelineFill" class="timeline-fill"></div>
+          <div id="timelineToday" class="timeline-today" title="Heute"></div>
+        </div>
+        <div class="timeline-labels">
+          <span id="timelineStart"></span>
+          <span id="timelineTodayLabel" class="muted"></span>
+          <span id="timelineTarget"></span>
+        </div>
+      </div>
+    </section>
+
     <!-- Kennzahlen -->
     <section id="statsSection" class="card hidden">
       <h2>Statistik <span id="jarName" class="muted"></span></h2>
-      <div class="stats-grid" id="statsGrid"></div>
+
+      <div class="stat-category">
+        <h3>Glas &amp; Inhalt</h3>
+        <div class="stats-grid" id="statsGlas"></div>
+      </div>
+
+      <div class="stat-category">
+        <h3>Verbrauch (Extremwerte)</h3>
+        <div class="stats-grid" id="statsExtremes"></div>
+      </div>
+
+      <div class="stat-category">
+        <h3>Burnrate: aktuell vs. projiziert</h3>
+        <div class="stats-grid" id="statsBurn"></div>
+      </div>
+
+      <div class="stat-category">
+        <h3>Reichweite &amp; Prognose</h3>
+        <div class="stats-grid" id="statsForecast"></div>
+      </div>
+
       <div id="targetBanner" class="banner"></div>
     </section>
 
@@ -36,6 +85,10 @@
       <div class="card">
         <h2>Restinhalt über die Zeit (Ist vs. Soll)</h2>
         <canvas id="contentChart"></canvas>
+      </div>
+      <div class="card">
+        <h2>Projektion bis zum Zieldatum</h2>
+        <canvas id="projectionChart"></canvas>
       </div>
       <div class="card">
         <h2>Verbrauch pro Messung</h2>

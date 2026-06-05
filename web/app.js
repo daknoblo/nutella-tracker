@@ -49,6 +49,7 @@ let selectedId = null;  // aktuell angezeigtes Glas
 let editing = false;    // Einstellungen im Bearbeiten-Modus?
 let contentChart = null;
 let consumptionChart = null;
+let projectionChart = null;
 
 // --- DOM-Referenzen ---
 const el = (id) => document.getElementById(id);
@@ -111,6 +112,7 @@ function renderSelected() {
   const view = currentView();
   const show = !!view && !editing;
 
+  el("timelineSection").classList.toggle("hidden", !show);
   el("statsSection").classList.toggle("hidden", !show);
   el("chartsSection").classList.toggle("hidden", !show);
   el("measureSection").classList.toggle("hidden", !show);
@@ -122,34 +124,92 @@ function renderSelected() {
     return;
   }
 
+  renderTimeline(view);
   renderStats(view);
   renderCharts(view);
   renderMeasurements(view);
   renderSettingsForm(view);
 }
 
+// renderTimeline zeigt die zeitliche Position im Gesamtzeitraum
+// (Start → Zieldatum) inkl. heutigem Tag und prozentualem Fortschritt.
+function renderTimeline(view) {
+  const jar = view.jar;
+  const start = new Date(jar.startDate + "T00:00:00");
+  const target = new Date(jar.targetDate + "T00:00:00");
+  const today = new Date(todayISO() + "T00:00:00");
+
+  const total = target - start;
+  // Anteil der vergangenen Zeit, begrenzt auf 0..100 %.
+  let pct = total > 0 ? ((today - start) / total) * 100 : 0;
+  pct = Math.max(0, Math.min(100, pct));
+
+  el("timelineFill").style.width = `${pct}%`;
+  el("timelineToday").style.left = `${pct}%`;
+  el("timelinePercent").textContent = `${Math.round(pct)} % der Zeit vergangen`;
+
+  el("timelineStart").textContent = `Start: ${fmtDate(jar.startDate)}`;
+  el("timelineTarget").textContent = `Ziel: ${fmtDate(jar.targetDate)}`;
+
+  // Resttage bis zum Zieldatum (kann negativ sein, wenn überschritten).
+  const remainingDays = Math.round((target - today) / 86400000);
+  const todayLabel =
+    remainingDays >= 0
+      ? `Heute – noch ${remainingDays} Tage`
+      : `Heute – ${Math.abs(remainingDays)} Tage über Ziel`;
+  el("timelineTodayLabel").textContent = todayLabel;
+}
+
 function renderStats(view) {
   const s = view.stats;
   el("jarName").textContent = view.jar.name ? `– ${view.jar.name}` : "";
 
-  const items = [
-    { label: "Aktueller Inhalt", value: fmtG(s.currentNet) },
+  // Kategorie 1: Glas & Inhalt (Gesamtglas, Anfang, aktuell, gesamt verbraucht).
+  fillStatGrid("statsGlas", [
+    { label: "Gesamtglas (brutto)", value: fmtG(view.jar.grossFullWeight) },
     { label: "Anfangsinhalt", value: fmtG(s.initialNet) },
+    { label: "Aktueller Inhalt", value: fmtG(s.currentNet) },
     { label: "Gesamt verbraucht", value: fmtG(s.totalConsumed) },
     { label: "Seit letzter Messung", value: fmtG(s.consumedSinceLast) },
-    { label: "Burnrate / Tag", value: fmtG(s.burnRatePerDay) },
-    { label: "Burnrate / Esstag (Sa/So)", value: fmtG(s.burnRatePerEatingDay) },
-    { label: "Soll-Verbrauch / Tag", value: fmtG(s.plannedDailyRate) },
-    { label: "Ø Verbrauch / Messung", value: fmtG(s.avgConsumed) },
-    { label: "Max / Min Verbrauch", value: `${fmtG(s.maxConsumed)} / ${fmtG(s.minConsumed)}` },
-    { label: "Geschätzt leer am", value: fmtDate(s.estimatedEmptyDate) },
-  ];
+  ]);
 
-  el("statsGrid").innerHTML = items
-    .map((i) => `<div class="stat"><div class="value">${i.value}</div><div class="label">${i.label}</div></div>`)
-    .join("");
+  // Kategorie 2: Extremwerte inkl. Tag mit höchstem/niedrigstem Verbrauch.
+  fillStatGrid("statsExtremes", [
+    { label: "Höchster Verbrauch", value: fmtG(s.maxConsumed), sub: fmtDate(s.maxConsumedDate) },
+    { label: "Niedrigster Verbrauch", value: fmtG(s.minConsumed), sub: fmtDate(s.minConsumedDate) },
+    { label: "Ø Verbrauch / Messung", value: fmtG(s.avgConsumed) },
+  ]);
+
+  // Kategorie 3: aktuelle vs. projizierte (Soll-)Burnrate.
+  fillStatGrid("statsBurn", [
+    { label: "Aktuell / Tag", value: fmtG(s.burnRatePerDay) },
+    { label: "Soll / Tag", value: fmtG(s.plannedDailyRate) },
+    { label: "Aktuell / Woche", value: fmtG(s.burnRatePerWeek) },
+    { label: "Soll / Woche", value: fmtG(s.plannedWeeklyRate) },
+    { label: "Aktuell / Esstag (Sa/So)", value: fmtG(s.burnRatePerEatingDay) },
+  ]);
+
+  // Kategorie 4: Reichweite & Prognose.
+  fillStatGrid("statsForecast", [
+    { label: "Nutzbar bis (geschätzt)", value: fmtDate(s.estimatedEmptyDate) },
+    { label: "Zieldatum", value: fmtDate(view.jar.targetDate) },
+    { label: "Restinhalt am Zieldatum", value: fmtG(s.projectedNetAtTarget) },
+  ]);
 
   renderTargetBanner(view);
+}
+
+// fillStatGrid rendert eine Liste von Kennzahlen in das angegebene Grid.
+function fillStatGrid(gridId, items) {
+  el(gridId).innerHTML = items
+    .map(
+      (i) =>
+        `<div class="stat"><div class="value">${i.value}</div>` +
+        `<div class="label">${i.label}</div>` +
+        (i.sub ? `<div class="sub">${i.sub}</div>` : "") +
+        `</div>`
+    )
+    .join("");
 }
 
 function renderTargetBanner(view) {
@@ -270,6 +330,10 @@ function renderCharts(view) {
     },
   });
 
+  // Projektions-Diagramm: Ist-Verlauf + Hochrechnung des aktuellen Verbrauchs
+  // bis zum Zieldatum.
+  renderProjectionChart(view, points);
+
   // Verbrauch pro Messung (Balken).
   const labels = s.consumption.map((c) => fmtDate(c.date));
   const consumed = s.consumption.map((c) => round1(c.consumed));
@@ -290,6 +354,71 @@ function renderCharts(view) {
       responsive: true,
       scales: { y: { beginAtZero: true, title: { display: true, text: "Gramm" } } },
       plugins: { legend: { display: false } },
+    },
+  });
+}
+
+// renderProjectionChart zeichnet den Ist-Verlauf und projiziert den aktuellen
+// Verbrauch (Burnrate) bis zum Zieldatum.
+function renderProjectionChart(view, points) {
+  const jar = view.jar;
+  const s = view.stats;
+
+  // Projektionslinie ab der letzten Messung bei aktueller Burnrate.
+  let projection = [];
+  if (points.length > 1 && s.burnRatePerDay > 0) {
+    const last = points[points.length - 1];
+    projection = [{ x: last.x, y: last.y }];
+    // Falls das Glas vor dem Zieldatum leer ist: Knick bei 0 setzen.
+    if (s.estimatedEmptyDate && s.estimatedEmptyDate < jar.targetDate) {
+      projection.push({ x: s.estimatedEmptyDate, y: 0 });
+    }
+    projection.push({ x: jar.targetDate, y: round1(s.projectedNetAtTarget) });
+  }
+
+  // Senkrechte Markierung am Zieldatum (von 0 bis Anfangsinhalt).
+  const targetMarker = [
+    { x: jar.targetDate, y: 0 },
+    { x: jar.targetDate, y: s.initialNet },
+  ];
+
+  projectionChart = upsertChart(projectionChart, "projectionChart", {
+    type: "line",
+    data: {
+      datasets: [
+        {
+          label: "Ist-Restinhalt",
+          data: points,
+          borderColor: "#b9722e",
+          backgroundColor: "rgba(185,114,46,0.15)",
+          tension: 0.2,
+          fill: true,
+        },
+        {
+          label: "Projektion (akt. Verbrauch)",
+          data: projection,
+          borderColor: "#c62828",
+          borderDash: [5, 4],
+          pointRadius: 0,
+          fill: false,
+        },
+        {
+          label: "Zieldatum",
+          data: targetMarker,
+          borderColor: "#2e7d32",
+          borderDash: [2, 2],
+          pointRadius: 0,
+          fill: false,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      scales: {
+        x: { type: "time", time: { unit: "day" }, adapters: {} },
+        y: { beginAtZero: true, title: { display: true, text: "Gramm" } },
+      },
+      plugins: { legend: { position: "bottom" } },
     },
   });
 }

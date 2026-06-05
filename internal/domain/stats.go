@@ -48,16 +48,21 @@ type Stats struct {
 	DaysElapsed          int     `json:"daysElapsed"`          // Tage seit Start bis letzte Messung
 	BurnRatePerDay       float64 `json:"burnRatePerDay"`       // Ø Verbrauch pro Kalendertag (g)
 	BurnRatePerEatingDay float64 `json:"burnRatePerEatingDay"` // Ø Verbrauch pro Esstag (Sa/So) (g)
+	BurnRatePerWeek      float64 `json:"burnRatePerWeek"`      // Ø Verbrauch pro Woche (g)
 
-	PlannedDailyRate float64 `json:"plannedDailyRate"` // Soll-Verbrauch pro Tag (g)
+	PlannedDailyRate  float64 `json:"plannedDailyRate"`  // Soll-Verbrauch pro Tag (g)
+	PlannedWeeklyRate float64 `json:"plannedWeeklyRate"` // Soll-Verbrauch pro Woche (g)
 
-	MaxConsumed float64 `json:"maxConsumed"` // größter Einzelverbrauch (g)
-	MinConsumed float64 `json:"minConsumed"` // kleinster Einzelverbrauch (g)
-	AvgConsumed float64 `json:"avgConsumed"` // Ø Verbrauch pro Messintervall (g)
+	MaxConsumed     float64 `json:"maxConsumed"`     // größter Einzelverbrauch (g)
+	MinConsumed     float64 `json:"minConsumed"`     // kleinster Einzelverbrauch (g)
+	MaxConsumedDate *Date   `json:"maxConsumedDate"` // Tag mit dem höchsten Verbrauch
+	MinConsumedDate *Date   `json:"minConsumedDate"` // Tag mit dem niedrigsten Verbrauch
+	AvgConsumed     float64 `json:"avgConsumed"`     // Ø Verbrauch pro Messintervall (g)
 
-	EstimatedEmptyDate *Date        `json:"estimatedEmptyDate"` // geschätztes Leerdatum
-	TargetStatus       TargetStatus `json:"targetStatus"`       // Soll/Ist-Ergebnis
-	TargetDiffDays     int          `json:"targetDiffDays"`     // Differenz Leerdatum − Zieldatum (Tage)
+	EstimatedEmptyDate  *Date        `json:"estimatedEmptyDate"`  // geschätztes Leerdatum
+	ProjectedNetAtTarget float64     `json:"projectedNetAtTarget"` // projizierter Restinhalt am Zieldatum (g)
+	TargetStatus        TargetStatus `json:"targetStatus"`        // Soll/Ist-Ergebnis
+	TargetDiffDays      int          `json:"targetDiffDays"`      // Differenz Leerdatum − Zieldatum (Tage)
 
 	Consumption []ConsumptionPoint `json:"consumption"` // Verbrauch je Messintervall
 }
@@ -89,10 +94,11 @@ func ComputeStats(j *Jar, today Date) Stats {
 		Consumption:  []ConsumptionPoint{},
 	}
 
-	// Soll-Verbrauch pro Tag (idealer linearer Verbrauch bis zum Zieldatum).
+	// Soll-Verbrauch pro Tag/Woche (idealer linearer Verbrauch bis zum Zieldatum).
 	plannedDays := j.TargetDate.DaysSince(j.StartDate)
 	if plannedDays > 0 {
 		s.PlannedDailyRate = j.InitialNet() / float64(plannedDays)
+		s.PlannedWeeklyRate = s.PlannedDailyRate * 7
 	}
 
 	ms := j.sortedMeasurements()
@@ -130,9 +136,13 @@ func ComputeStats(j *Jar, today Date) Stats {
 		sumConsumed += consumed
 		if consumed > s.MaxConsumed {
 			s.MaxConsumed = consumed
+			d := m.Date
+			s.MaxConsumedDate = &d
 		}
 		if consumed < s.MinConsumed {
 			s.MinConsumed = consumed
+			d := m.Date
+			s.MinConsumedDate = &d
 		}
 		prevDate = m.Date
 		prevNet = net
@@ -155,12 +165,20 @@ func ComputeStats(j *Jar, today Date) Stats {
 	if eatingDays > 0 {
 		s.BurnRatePerEatingDay = s.TotalConsumed / float64(eatingDays)
 	}
+	s.BurnRatePerWeek = s.BurnRatePerDay * 7
 
 	// Reichweiten-Schätzung: bei aktueller Burnrate, ab heute.
 	if s.BurnRatePerDay > 0 && s.CurrentNet > 0 {
 		remainingDays := int(math.Ceil(s.CurrentNet / s.BurnRatePerDay))
 		empty := today.AddDays(remainingDays)
 		s.EstimatedEmptyDate = &empty
+
+		// Projizierter Restinhalt am Zieldatum bei aktueller Burnrate.
+		daysToTarget := j.TargetDate.DaysSince(today)
+		s.ProjectedNetAtTarget = s.CurrentNet - s.BurnRatePerDay*float64(daysToTarget)
+		if s.ProjectedNetAtTarget < 0 {
+			s.ProjectedNetAtTarget = 0
+		}
 
 		s.TargetDiffDays = empty.DaysSince(j.TargetDate)
 		switch {

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nutella Tracker</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍫</text></svg>" />
+  <!-- Chart.js (clientseitige Diagramme) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+</head>
+
+<body>
+  <header>
+    <h1>🍫 Nutella Tracker</h1>
+    <div class="jar-select">
+      <label for="jarSelect">Glas:</label>
+      <select id="jarSelect"></select>
+      <button id="activateBtn" title="Dieses Glas als aktiv setzen">Aktiv setzen</button>
+      <button id="newJarBtn" class="primary">+ Neues Glas</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- Kennzahlen -->
+    <section id="statsSection" class="card hidden">
+      <h2>Statistik <span id="jarName" class="muted"></span></h2>
+      <div class="stats-grid" id="statsGrid"></div>
+      <div id="targetBanner" class="banner"></div>
+    </section>
+
+    <!-- Diagramme -->
+    <section id="chartsSection" class="hidden">
+      <div class="card">
+        <h2>Restinhalt über die Zeit (Ist vs. Soll)</h2>
+        <canvas id="contentChart"></canvas>
+      </div>
+      <div class="card">
+        <h2>Verbrauch pro Messung</h2>
+        <canvas id="consumptionChart"></canvas>
+      </div>
+    </section>
+
+    <div class="columns">
+      <!-- Neue Messung -->
+      <section id="measureSection" class="card hidden">
+        <h2>Neue Messung (Weigh-In)</h2>
+        <form id="measureForm">
+          <label>
+            Datum
+            <input type="date" id="measureDate" required />
+          </label>
+          <label>
+            Aktuelles Bruttogewicht (Glas + Inhalt) in g
+            <input type="number" id="measureWeight" step="0.1" min="0" required placeholder="z. B. 970" />
+          </label>
+          <button type="submit" class="primary">Messung speichern</button>
+        </form>
+
+        <h3>Messhistorie</h3>
+        <table id="measureTable">
+          <thead>
+            <tr>
+              <th>Datum</th>
+              <th>Brutto (g)</th>
+              <th>Inhalt (g)</th>
+              <th>Verbraucht (g)</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </section>
+
+      <!-- Einstellungen -->
+      <section id="settingsSection" class="card hidden">
+        <h2>Einstellungen</h2>
+        <form id="jarForm">
+          <input type="hidden" id="jarId" />
+          <label>
+            Name (optional)
+            <input type="text" id="jarFormName" placeholder="z. B. Glas Januar" />
+          </label>
+          <label>
+            Bruttofüllgewicht (volles Glas) in g
+            <input type="number" id="jarFormGross" step="0.1" min="1" required value="1200" />
+          </label>
+          <label>
+            Leergewicht des Glases (Tara) in g
+            <input type="number" id="jarFormTare" step="0.1" min="0" required value="200" />
+          </label>
+          <label>
+            Startdatum
+            <input type="date" id="jarFormStart" required />
+          </label>
+          <label>
+            Zieldatum (bis wann soll das Glas reichen)
+            <input type="date" id="jarFormTarget" required />
+          </label>
+          <div class="form-actions">
+            <button type="submit" class="primary" id="jarFormSubmit">Speichern</button>
+            <button type="button" id="jarFormCancel" class="hidden">Abbrechen</button>
+            <button type="button" id="deleteJarBtn" class="danger hidden">Glas löschen</button>
+          </div>
+        </form>
+      </section>
+    </div>
+
+    <p id="emptyHint" class="muted hidden">
+      Noch kein Glas vorhanden. Lege oben rechts ein neues Glas an.
+    </p>
+  </main>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="app.js"></script>
+</body>
+
+</html>

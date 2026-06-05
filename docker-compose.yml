@@ -1,0 +1,19 @@
+services:
+  nutella-tracker:
+    # Lokal bauen ...
+    build: .
+    # ... oder das per Pipeline veröffentlichte Image verwenden:
+    # image: ghcr.io/daknoblo/nutella-tracker:latest
+    container_name: nutella-tracker
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      PORT: "8080"
+      DATA_FILE: "/data/nutella.json"
+    volumes:
+      # JSON-Datenspeicher persistent halten (überlebt Container-Neustart).
+      - nutella-data:/data
+
+volumes:
+  nutella-data:

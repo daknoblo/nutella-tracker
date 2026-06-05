@@ -13,7 +13,11 @@ services:
       DATA_FILE: "/data/nutella.json"
     volumes:
       # JSON-Datenspeicher persistent halten (überlebt Container-Neustart).
+      # Variante A (empfohlen): von Docker verwaltetes Named Volume.
       - nutella-data:/data
+      # Variante B: Bind-Mount in einen Host-Ordner (JSON direkt sichtbar).
+      #   Der Container läuft als root, daher sind keine Host-Rechte nötig.
+      # - ./data:/data
 
 volumes:
   nutella-data:

@@ -323,7 +323,7 @@ function renderCharts(view) {
     options: {
       responsive: true,
       scales: {
-        x: { type: "time", time: { unit: "day" }, adapters: {} },
+        x: buildTimeScale(jar),
         y: { beginAtZero: true, title: { display: true, text: "Gramm" } },
       },
       plugins: { legend: { position: "bottom" } },
@@ -415,7 +415,7 @@ function renderProjectionChart(view, points) {
     options: {
       responsive: true,
       scales: {
-        x: { type: "time", time: { unit: "day" }, adapters: {} },
+        x: buildTimeScale(jar),
         y: { beginAtZero: true, title: { display: true, text: "Gramm" } },
       },
       plugins: { legend: { position: "bottom" } },
@@ -423,13 +423,35 @@ function renderProjectionChart(view, points) {
   });
 }
 
+// buildTimeScale liefert die Konfiguration einer Zeitachse, die jeweils eine
+// Woche vor dem Startdatum beginnt und eine Woche nach dem Zieldatum endet.
+function buildTimeScale(jar) {
+  return {
+    type: "time",
+    min: addDaysISO(jar.startDate, -7),
+    max: addDaysISO(jar.targetDate, 7),
+    time: { unit: "day", tooltipFormat: "dd.MM.yyyy", displayFormats: { day: "dd.MM." } },
+    title: { display: true, text: "Datum" },
+  };
+}
+
+// hasDateAdapter prüft, ob ein Chart.js-Datums-Adapter geladen ist.
+function hasDateAdapter() {
+  try {
+    const adapter = new Chart._adapters._date({});
+    const ts = adapter.parse("2026-01-01");
+    return typeof ts === "number" && !isNaN(ts);
+  } catch (_) {
+    return false;
+  }
+}
+
 // upsertChart zerstört ggf. ein bestehendes Chart und erstellt es neu.
-// (Zeitachse nutzt kategoriale Labels als Fallback, falls kein Time-Adapter.)
+// Ist kein Datums-Adapter geladen (z. B. offline), wird die Zeitachse auf eine
+// kategoriale x-Achse mit formatierten Datums-Labels zurückgesetzt.
 function upsertChart(existing, canvasId, config) {
   if (existing) existing.destroy();
-  // Ohne Date-Adapter kann Chart.js keine "time"-Achse rendern -> auf
-  // kategoriale x-Achse mit formatierten Datums-Labels zurückfallen.
-  if (config.options?.scales?.x?.type === "time") {
+  if (config.options?.scales?.x?.type === "time" && !hasDateAdapter()) {
     for (const ds of config.data.datasets) {
       ds.data = ds.data.map((p) => ({ x: fmtDate(p.x), y: p.y }));
     }
@@ -474,6 +496,13 @@ function renderSettingsForm(view) {
 function addMonthsISO(iso, months) {
   const d = new Date(iso + "T00:00:00");
   d.setMonth(d.getMonth() + months);
+  return d.toISOString().slice(0, 10);
+}
+
+// addDaysISO verschiebt ein ISO-Datum (YYYY-MM-DD) um n Tage.
+function addDaysISO(iso, n) {
+  const d = new Date(iso + "T00:00:00");
+  d.setDate(d.getDate() + n);
   return d.toISOString().slice(0, 10);
 }
 

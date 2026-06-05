@@ -1,0 +1,8 @@
+# Build-Kontext schlank halten
+.git
+.github
+data
+bin
+*.md
+.DS_Store
+.vscode

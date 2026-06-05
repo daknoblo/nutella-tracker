@@ -1,0 +1,10 @@
+# Build-Artefakte
+/bin/
+nutella-tracker
+
+# Laufzeit-Daten (JSON-Datenspeicher)
+/data/
+
+# OS / Editor
+.DS_Store
+*.swp

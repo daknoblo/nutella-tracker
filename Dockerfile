@@ -20,14 +20,13 @@ RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" \
 # --- Runtime-Stage: schlankes Image ---
 FROM alpine:3.20 AS runtime
 
-# Nicht-root-Benutzer für die Laufzeit.
-RUN addgroup -S app && adduser -S app -G app \
-    && mkdir -p /data && chown app:app /data
+# Der Container läuft als root, damit der Prozess in jedes gemountete Volume
+# schreiben darf, ohne dass auf dem Host vorab Rechte gesetzt werden müssen
+# (keine manuellen Eingriffe per SSH nötig).
+RUN mkdir -p /data
 
 WORKDIR /app
 COPY --from=build /out/nutella-tracker /app/nutella-tracker
-
-USER app
 
 # Daten landen im Volume /data.
 ENV PORT=8080 \

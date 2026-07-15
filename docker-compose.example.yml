@@ -1,0 +1,24 @@
+services:
+  nutella-tracker:
+    image: ghcr.io/daknoblo/nutella-tracker:stable
+    container_name: nutella-tracker
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      PORT: "8080"
+      DATA_FILE: "/data/nutella.json"
+      TZ: "Europe/Berlin"
+    volumes:
+      # JSON-Datenspeicher persistent halten (non-root UID/GID 65532).
+      - nutella-data:/data
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+volumes:
+  nutella-data:

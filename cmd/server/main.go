@@ -13,6 +13,7 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+	_ "time/tzdata"
 
 	"github.com/daknoblo/nutella-tracker/internal/api"
 	"github.com/daknoblo/nutella-tracker/internal/storage"
@@ -20,6 +21,10 @@ import (
 )
 
 func main() {
+	if len(os.Args) > 1 && (os.Args[1] == "-healthcheck" || os.Args[1] == "healthcheck") {
+		os.Exit(healthcheck())
+	}
+
 	port := envOr("PORT", "8080")
 	dataFile := envOr("DATA_FILE", "data/nutella.json")
 
@@ -32,6 +37,11 @@ func main() {
 
 	// API-Routen registrieren.
 	api.New(store).Routes(mux)
+
+	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("ok"))
+	})
 
 	// Statische Web-UI ausliefern (eingebettetes Dateisystem).
 	staticFS, err := fs.Sub(web.Files, ".")
@@ -64,6 +74,20 @@ func main() {
 	if err := srv.Shutdown(ctx); err != nil {
 		log.Printf("Fehler beim Beenden: %v", err)
 	}
+}
+
+func healthcheck() int {
+	port := envOr("PORT", "8080")
+	client := &http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Get("http://127.0.0.1:" + port + "/healthz")
+	if err != nil {
+		return 1
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode != http.StatusOK {
+		return 1
+	}
+	return 0
 }
 
 // envOr liefert den Wert der Umgebungsvariablen key oder fallback.

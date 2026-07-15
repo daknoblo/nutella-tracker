@@ -57,13 +57,15 @@ und überleben einen Container-Neustart.
 
 Alternativ das per GitHub Actions veröffentlichte Image verwenden – dazu in der
 [docker-compose.yml](docker-compose.yml) `build: .` durch die `image:`-Zeile
-ersetzen.
+ersetzen oder [docker-compose.example.yml](docker-compose.example.yml) als
+gehärtete Vorlage nutzen.
 
 ## CI/CD
 
-[GitHub Actions](.github/workflows/ci.yml) baut und testet den Go-Code und
-veröffentlicht bei Pushes auf `main`/Tags ein Multi-Stage-Docker-Image nach
-GHCR (`ghcr.io/<owner>/nutella-tracker`).
+[CI](.github/workflows/ci.yml) prüft Formatierung, Vet, Lint, Vulnerabilities,
+Tests und Build. [Release](.github/workflows/release.yml) veröffentlicht bei
+Pushes auf `main`/`develop` und Tags ein signiertes Multi-Arch-Docker-Image nach
+GHCR (`ghcr.io/<owner>/nutella-tracker`) und lädt Scan-Ergebnisse hoch.
 
 ## API (Auszug)
 

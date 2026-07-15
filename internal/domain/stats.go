@@ -59,10 +59,10 @@ type Stats struct {
 	MinConsumedDate *Date   `json:"minConsumedDate"` // Tag mit dem niedrigsten Verbrauch
 	AvgConsumed     float64 `json:"avgConsumed"`     // Ø Verbrauch pro Messintervall (g)
 
-	EstimatedEmptyDate  *Date        `json:"estimatedEmptyDate"`  // geschätztes Leerdatum
-	ProjectedNetAtTarget float64     `json:"projectedNetAtTarget"` // projizierter Restinhalt am Zieldatum (g)
-	TargetStatus        TargetStatus `json:"targetStatus"`        // Soll/Ist-Ergebnis
-	TargetDiffDays      int          `json:"targetDiffDays"`      // Differenz Leerdatum − Zieldatum (Tage)
+	EstimatedEmptyDate   *Date        `json:"estimatedEmptyDate"`   // geschätztes Leerdatum
+	ProjectedNetAtTarget float64      `json:"projectedNetAtTarget"` // projizierter Restinhalt am Zieldatum (g)
+	TargetStatus         TargetStatus `json:"targetStatus"`         // Soll/Ist-Ergebnis
+	TargetDiffDays       int          `json:"targetDiffDays"`       // Differenz Leerdatum − Zieldatum (Tage)
 
 	Consumption []ConsumptionPoint `json:"consumption"` // Verbrauch je Messintervall
 }

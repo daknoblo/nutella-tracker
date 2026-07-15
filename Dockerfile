@@ -1,7 +1,10 @@
 # syntax=docker/dockerfile:1
 
 # --- Build-Stage: Go-Binary statisch kompilieren ---
-FROM golang:1.26-alpine AS build
+FROM --platform=$BUILDPLATFORM golang:1.26-alpine AS build
+
+ARG TARGETOS=linux
+ARG TARGETARCH=amd64
 
 WORKDIR /src
 
@@ -14,19 +17,16 @@ RUN go mod download
 # Restlichen Quellcode kopieren und bauen.
 COPY . .
 # CGO aus -> statisches Binary, klein und ohne libc-Abhängigkeit.
-RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" \
+RUN mkdir -p /out /data && \
+    CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -trimpath -ldflags="-s -w" \
     -o /out/nutella-tracker ./cmd/server
 
-# --- Runtime-Stage: schlankes Image ---
-FROM alpine:3.20 AS runtime
-
-# Der Container läuft als root, damit der Prozess in jedes gemountete Volume
-# schreiben darf, ohne dass auf dem Host vorab Rechte gesetzt werden müssen
-# (keine manuellen Eingriffe per SSH nötig).
-RUN mkdir -p /data
+# --- Runtime-Stage: schlankes, gehärtetes Image ---
+FROM gcr.io/distroless/static:nonroot AS runtime
 
 WORKDIR /app
 COPY --from=build /out/nutella-tracker /app/nutella-tracker
+COPY --from=build --chown=65532:65532 /data /data
 
 # Daten landen im Volume /data.
 ENV PORT=8080 \
@@ -34,5 +34,10 @@ ENV PORT=8080 \
 
 EXPOSE 8080
 VOLUME ["/data"]
+
+USER nonroot:nonroot
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD ["/app/nutella-tracker", "-healthcheck"]
 
 ENTRYPOINT ["/app/nutella-tracker"]

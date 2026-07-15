@@ -16,7 +16,7 @@ services:
       # Variante A (empfohlen): von Docker verwaltetes Named Volume.
       - nutella-data:/data
       # Variante B: Bind-Mount in einen Host-Ordner (JSON direkt sichtbar).
-      #   Der Container läuft als root, daher sind keine Host-Rechte nötig.
+      #   Für non-root (UID/GID 65532) muss der Host-Ordner beschreibbar sein.
       # - ./data:/data
 
 volumes:

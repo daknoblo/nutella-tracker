@@ -7,11 +7,11 @@ services:
       - "8080:8080"
     environment:
       PORT: "8080"
-      DATA_FILE: "/data/nutella.json"
+      DATA_FILE: "/appdata/nutella.json"
       TZ: "Europe/Berlin"
     volumes:
       # JSON-Datenspeicher persistent halten (non-root UID/GID 65532).
-      - nutella-data:/data
+      - nutella-data:/appdata
     read_only: true
     tmpfs:
       - /tmp

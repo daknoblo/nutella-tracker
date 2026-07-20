@@ -5,6 +5,9 @@ nutella-tracker
 # Laufzeit-Daten (JSON-Datenspeicher)
 /data/
 
+# Secrets / lokale Env
+.env
+
 # OS / Editor
 .DS_Store
 *.swp

@@ -33,10 +33,40 @@ go run ./cmd/server
 
 Konfiguration über Umgebungsvariablen:
 
-| Variable    | Default              | Beschreibung                  |
-| ----------- | -------------------- | ----------------------------- |
-| `PORT`      | `8080`               | HTTP-Port                     |
-| `DATA_FILE` | `data/nutella.json`  | Pfad zur JSON-Datendatei      |
+| Variable                   | Default                | Beschreibung                                        |
+| -------------------------- | ---------------------- | --------------------------------------------------- |
+| `PORT`                     | `8080`                 | HTTP-Port                                           |
+| `DATA_FILE`                | `data/nutella.json`    | Pfad zur JSON-Datendatei                            |
+| `AZURE_VISION_ENDPOINT`    | –                      | Foundry-/Azure-OpenAI-Endpoint (Foto-Erkennung)     |
+| `AZURE_VISION_KEY`         | –                      | Secret/API-Key (nur via Env, nie in der JSON)       |
+| `AZURE_VISION_MODEL`       | –                      | Deployment-/Modellname (z. B. `gpt-4o`)             |
+| `AZURE_VISION_API_VERSION` | `2024-08-01-preview`   | API-Version des Vision-Endpoints                    |
+
+## Foto-Erkennung (optional)
+
+Statt das Gewicht manuell einzutippen, kann ein Foto des Waagen-Displays
+aufgenommen werden – ein Vision-Modell in **Microsoft Foundry** liest den Wert
+aus. Die Funktion erscheint nur, wenn die `AZURE_VISION_*`-Variablen gesetzt
+sind. **Die Bilder werden nicht gespeichert**; das Foto wird ausschließlich für
+die einzelne Erkennungs-Anfrage an das Modell übermittelt.
+
+Ablauf: Auf dem Handy „📷 Foto aufnehmen & auslesen" tippen → das Foto geht an
+das Backend → das Backend ruft das Vision-Modell auf → der erkannte Wert wird
+ins Mess-Formular eingetragen und kann nach Prüfung gespeichert werden.
+
+### Einrichtung in Microsoft Foundry
+
+1. In Microsoft Foundry / Azure OpenAI ein **vision-fähiges Modell** (z. B.
+   `gpt-4o` oder `gpt-4o-mini`) als **Deployment** anlegen.
+2. Folgende drei Werte aus dem Portal übernehmen:
+   - **Endpoint-URL** → `AZURE_VISION_ENDPOINT`
+     (Form: `https://<ressource>.openai.azure.com`)
+   - **Secret/API-Key** → `AZURE_VISION_KEY`
+   - **Deployment-/Modellname** → `AZURE_VISION_MODEL`
+3. Optional die **API-Version** anpassen (`AZURE_VISION_API_VERSION`).
+
+Lokal lassen sich die Werte über eine `.env`-Datei bereitstellen
+(siehe [.env.example](.env.example)); diese ist per `.gitignore` ausgeschlossen.
 
 ## Tests
 
@@ -52,7 +82,7 @@ Image bauen und starten:
 docker compose up --build
 ```
 
-Die Daten liegen im benannten Volume `nutella-data` (gemountet unter `/data`)
+Die Daten liegen im benannten Volume `nutella-data` (gemountet unter `/appdata`)
 und überleben einen Container-Neustart.
 
 Alternativ das per GitHub Actions veröffentlichte Image verwenden – dazu in der
@@ -80,3 +110,5 @@ GHCR (`ghcr.io/<owner>/nutella-tracker`) und lädt Scan-Ergebnisse hoch.
 | `POST /api/jars/{id}/measurements`          | Messung hinzufügen             |
 | `DELETE /api/jars/{id}/measurements/{idx}`  | Messung löschen                |
 | `GET /api/active`                           | Aktives Glas inkl. Statistik   |
+| `GET /api/config`                           | Verfügbare Features (z. B. Vision) |
+| `POST /api/vision/recognize`                | Foto (multipart `photo`) → erkanntes Gewicht |

@@ -5,22 +5,29 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/daknoblo/nutella-tracker/internal/domain"
 	"github.com/daknoblo/nutella-tracker/internal/storage"
+	"github.com/daknoblo/nutella-tracker/internal/vision"
 )
+
+// maxUploadBytes begrenzt die Größe hochgeladener Fotos (10 MB).
+const maxUploadBytes = 10 << 20
 
 // Server bündelt den Datenspeicher und stellt die API-Handler bereit.
 type Server struct {
-	store *storage.Store
+	store  *storage.Store
+	vision *vision.Client
 }
 
-// New erzeugt einen neuen API-Server.
-func New(store *storage.Store) *Server {
-	return &Server{store: store}
+// New erzeugt einen neuen API-Server. visionClient darf nil sein, wenn keine
+// Foto-Erkennung konfiguriert ist.
+func New(store *storage.Store, visionClient *vision.Client) *Server {
+	return &Server{store: store, vision: visionClient}
 }
 
 // Routes registriert alle API-Routen am übergebenen Mux.
@@ -35,6 +42,8 @@ func (s *Server) Routes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/jars/{id}/measurements", s.handleAddMeasurement)
 	mux.HandleFunc("DELETE /api/jars/{id}/measurements/{index}", s.handleDeleteMeasurement)
 	mux.HandleFunc("GET /api/active", s.handleActive)
+	mux.HandleFunc("GET /api/config", s.handleConfig)
+	mux.HandleFunc("POST /api/vision/recognize", s.handleVisionRecognize)
 }
 
 // jarView ist die API-Repräsentation eines Glases inkl. Statistik.
@@ -215,6 +224,47 @@ func (s *Server) viewFor(j *domain.Jar) jarView {
 		Stats:  domain.ComputeStats(j, domain.Today()),
 		Active: j.ID == s.store.ActiveJarID(),
 	}
+}
+
+// handleConfig meldet der UI, welche optionalen Funktionen verfügbar sind.
+func (s *Server) handleConfig(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, http.StatusOK, map[string]bool{
+		"visionEnabled": s.vision != nil && s.vision.Enabled(),
+	})
+}
+
+// handleVisionRecognize nimmt ein Foto entgegen, lässt den Gewichtswert vom
+// Vision-Modell auslesen und gibt ihn zurück. Das Bild wird nicht gespeichert.
+func (s *Server) handleVisionRecognize(w http.ResponseWriter, r *http.Request) {
+	if s.vision == nil || !s.vision.Enabled() {
+		writeError(w, http.StatusServiceUnavailable, errors.New("Foto-Erkennung ist nicht konfiguriert"))
+		return
+	}
+
+	// Upload-Größe begrenzen.
+	r.Body = http.MaxBytesReader(w, r.Body, maxUploadBytes)
+
+	file, header, err := r.FormFile("photo")
+	if err != nil {
+		writeError(w, http.StatusBadRequest, errors.New("kein Foto im Feld 'photo' gefunden"))
+		return
+	}
+	defer file.Close()
+
+	image, err := io.ReadAll(file)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, fmt.Errorf("Foto konnte nicht gelesen werden: %w", err))
+		return
+	}
+
+	contentType := header.Header.Get("Content-Type")
+
+	grams, err := s.vision.RecognizeWeight(r.Context(), image, contentType)
+	if err != nil {
+		writeError(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]float64{"grossWeight": grams})
 }
 
 // --- Hilfsfunktionen ---

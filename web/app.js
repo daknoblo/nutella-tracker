@@ -25,6 +25,19 @@ const api = {
   async deleteMeasurement(id, index) {
     return fetchJSON(`/api/jars/${encodeURIComponent(id)}/measurements/${index}`, { method: "DELETE" });
   },
+  async getConfig() {
+    return fetchJSON("/api/config");
+  },
+  async recognizePhoto(file) {
+    const form = new FormData();
+    form.append("photo", file);
+    const res = await fetch("/api/vision/recognize", { method: "POST", body: form });
+    const data = await res.json().catch(() => null);
+    if (!res.ok) {
+      throw new Error((data && data.error) || `Fehler ${res.status}`);
+    }
+    return data;
+  },
 };
 
 // fetchJSON kapselt fetch inkl. JSON-Serialisierung und Fehlerbehandlung.
@@ -47,6 +60,7 @@ async function fetchJSON(url, opts = {}) {
 let jars = [];          // Liste aller jarView-Objekte
 let selectedId = null;  // aktuell angezeigtes Glas
 let editing = false;    // Einstellungen im Bearbeiten-Modus?
+let visionEnabled = false; // Foto-Erkennung verfügbar?
 let contentChart = null;
 let consumptionChart = null;
 let projectionChart = null;
@@ -129,6 +143,9 @@ function renderSelected() {
   renderCharts(view);
   renderMeasurements(view);
   renderSettingsForm(view);
+
+  // Foto-Box nur anzeigen, wenn die Vision-Erkennung serverseitig aktiv ist.
+  el("photoBox").classList.toggle("hidden", !visionEnabled);
 }
 
 // renderTimeline zeigt die zeitliche Position im Gesamtzeitraum
@@ -601,9 +618,44 @@ function onCancelEdit() {
   reload();
 }
 
+// onPhotoSelected lädt das aufgenommene Foto hoch, lässt das Gewicht auslesen
+// und trägt den erkannten Wert in das Mess-Formular ein (zur Bestätigung).
+async function onPhotoSelected(e) {
+  const file = e.target.files && e.target.files[0];
+  e.target.value = ""; // erlaubt erneutes Auswählen desselben Fotos
+  if (!file) return;
+
+  const btn = document.querySelector(".photo-btn");
+  const statusEl = el("photoStatus");
+  btn.classList.add("busy");
+  statusEl.className = "photo-status";
+  statusEl.textContent = "Foto wird ausgewertet …";
+
+  try {
+    const res = await api.recognizePhoto(file);
+    el("measureWeight").value = round1(res.grossWeight);
+    statusEl.className = "photo-status ok";
+    statusEl.textContent = `Erkannt: ${fmtG(res.grossWeight)} – bitte prüfen und speichern.`;
+    el("measureWeight").focus();
+  } catch (err) {
+    statusEl.className = "photo-status bad";
+    statusEl.textContent = `Erkennung fehlgeschlagen: ${err.message}`;
+  } finally {
+    btn.classList.remove("busy");
+  }
+}
+
 // --- Initialisierung ---
-function init() {
+async function init() {
   el("measureDate").value = todayISO();
+
+  // Optionale Features (z. B. Foto-Erkennung) vom Server abfragen.
+  try {
+    const cfg = await api.getConfig();
+    visionEnabled = !!(cfg && cfg.visionEnabled);
+  } catch (_) {
+    visionEnabled = false;
+  }
 
   el("jarSelect").addEventListener("change", (e) => {
     editing = false;
@@ -616,6 +668,7 @@ function init() {
   el("activateBtn").addEventListener("click", onActivate);
   el("newJarBtn").addEventListener("click", onNewJar);
   el("jarFormCancel").addEventListener("click", onCancelEdit);
+  el("photoInput").addEventListener("change", onPhotoSelected);
 
   reload();
 }

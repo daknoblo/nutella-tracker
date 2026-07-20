@@ -341,6 +341,59 @@ td button {
   font-size: 0.85rem;
 }
 
+/* --- Foto-Erkennung --- */
+.photo-box {
+  background: var(--bg);
+  border: 1px dashed var(--accent-2);
+  border-radius: 10px;
+  padding: 0.9rem;
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.photo-box p {
+  margin: 0;
+}
+
+.photo-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.6rem 0.9rem;
+  border-radius: 7px;
+  cursor: pointer;
+  font-weight: 600;
+  background: var(--accent-2);
+  color: #fff;
+  border: 1px solid var(--accent-2);
+  align-self: flex-start;
+}
+
+.photo-btn:hover {
+  opacity: 0.92;
+}
+
+.photo-btn.busy {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.photo-status {
+  font-size: 0.85rem;
+  min-height: 1.1em;
+}
+
+.photo-status.ok {
+  color: var(--ok);
+}
+
+.photo-status.bad {
+  color: var(--bad);
+}
+
 .hidden {
   display: none !important;
 }

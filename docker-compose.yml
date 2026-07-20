@@ -10,14 +10,21 @@ services:
       - "8080:8080"
     environment:
       PORT: "8080"
-      DATA_FILE: "/data/nutella.json"
+      DATA_FILE: "/appdata/nutella.json"
+      # Optional: Foto-Erkennung via Microsoft Foundry / Azure OpenAI Vision.
+      # Den Secret-Key NICHT hier eintragen, sondern über die Umgebung/.env
+      # bereitstellen, damit er nicht im Repo landet.
+      AZURE_VISION_ENDPOINT: "${AZURE_VISION_ENDPOINT:-}"
+      AZURE_VISION_KEY: "${AZURE_VISION_KEY:-}"
+      AZURE_VISION_MODEL: "${AZURE_VISION_MODEL:-}"
+      AZURE_VISION_API_VERSION: "${AZURE_VISION_API_VERSION:-2024-08-01-preview}"
     volumes:
       # JSON-Datenspeicher persistent halten (überlebt Container-Neustart).
       # Variante A (empfohlen): von Docker verwaltetes Named Volume.
-      - nutella-data:/data
+      - nutella-data:/appdata
       # Variante B: Bind-Mount in einen Host-Ordner (JSON direkt sichtbar).
       #   Für non-root (UID/GID 65532) muss der Host-Ordner beschreibbar sein.
-      # - ./data:/data
+      # - ./appdata:/appdata
 
 volumes:
   nutella-data:

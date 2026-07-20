@@ -102,6 +102,18 @@
       <!-- Neue Messung -->
       <section id="measureSection" class="card hidden">
         <h2>Neue Messung (Weigh-In)</h2>
+
+        <!-- Foto-Erkennung (nur sichtbar, wenn Vision konfiguriert ist) -->
+        <div id="photoBox" class="photo-box hidden">
+          <p class="muted">Glas auf die Waage stellen und ein Foto des Displays machen –
+            der Wert wird automatisch ausgelesen.</p>
+          <label class="photo-btn primary" for="photoInput">
+            📷 Foto aufnehmen &amp; auslesen
+            <input type="file" id="photoInput" accept="image/*" capture="environment" hidden />
+          </label>
+          <span id="photoStatus" class="photo-status"></span>
+        </div>
+
         <form id="measureForm">
           <label>
             Datum

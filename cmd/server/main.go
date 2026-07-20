@@ -17,6 +17,7 @@ import (
 
 	"github.com/daknoblo/nutella-tracker/internal/api"
 	"github.com/daknoblo/nutella-tracker/internal/storage"
+	"github.com/daknoblo/nutella-tracker/internal/vision"
 	"github.com/daknoblo/nutella-tracker/web"
 )
 
@@ -33,10 +34,24 @@ func main() {
 		log.Fatalf("Datenspeicher konnte nicht geöffnet werden: %v", err)
 	}
 
+	// Vision-/Foto-Erkennung (optional). Der Secret-Key kommt ausschließlich aus
+	// der Umgebungsvariablen und wird nicht persistiert.
+	visionClient := vision.New(vision.Config{
+		Endpoint:   os.Getenv("AZURE_VISION_ENDPOINT"),
+		APIKey:     os.Getenv("AZURE_VISION_KEY"),
+		Model:      os.Getenv("AZURE_VISION_MODEL"),
+		APIVersion: os.Getenv("AZURE_VISION_API_VERSION"),
+	})
+	if visionClient.Enabled() {
+		log.Println("Foto-Erkennung (Vision) ist aktiviert.")
+	} else {
+		log.Println("Foto-Erkennung (Vision) ist nicht konfiguriert – nur manuelle Eingabe.")
+	}
+
 	mux := http.NewServeMux()
 
 	// API-Routen registrieren.
-	api.New(store).Routes(mux)
+	api.New(store, visionClient).Routes(mux)
 
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)

@@ -17,7 +17,7 @@ RUN go mod download
 # Restlichen Quellcode kopieren und bauen.
 COPY . .
 # CGO aus -> statisches Binary, klein und ohne libc-Abhängigkeit.
-RUN mkdir -p /out /data && \
+RUN mkdir -p /out /appdata && \
     CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -trimpath -ldflags="-s -w" \
     -o /out/nutella-tracker ./cmd/server
 
@@ -26,14 +26,14 @@ FROM gcr.io/distroless/static:nonroot AS runtime
 
 WORKDIR /app
 COPY --from=build /out/nutella-tracker /app/nutella-tracker
-COPY --from=build --chown=65532:65532 /data /data
+COPY --from=build --chown=65532:65532 /appdata /appdata
 
-# Daten landen im Volume /data.
+# Daten landen im Volume /appdata.
 ENV PORT=8080 \
-    DATA_FILE=/data/nutella.json
+    DATA_FILE=/appdata/nutella.json
 
 EXPOSE 8080
-VOLUME ["/data"]
+VOLUME ["/appdata"]
 
 USER nonroot:nonroot
 

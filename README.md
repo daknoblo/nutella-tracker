@@ -1,8 +1,6 @@
 # 🍫 nutella-tracker
 
-My very own Nutella usage tracker & estimator – eine kleine Go-Webanwendung, die
-den Verbrauch eines Nutella-Glases trackt, eine Burnrate berechnet und schätzt,
-ob das Glas bis zum Zieldatum reicht.
+Tracks a Nutella jar by weight, calculates the burn rate and estimates whether it lasts until your target date — with optional photo-based scale reading.
 
 ## Features
 

@@ -110,3 +110,8 @@ GHCR (`ghcr.io/<owner>/nutella-tracker`) und lädt Scan-Ergebnisse hoch.
 | `GET /api/active`                           | Aktives Glas inkl. Statistik   |
 | `GET /api/config`                           | Verfügbare Features (z. B. Vision) |
 | `POST /api/vision/recognize`                | Foto (multipart `photo`) → erkanntes Gewicht |
+
+
+## Lizenz
+
+Veröffentlicht unter der [MIT-Lizenz](LICENSE).

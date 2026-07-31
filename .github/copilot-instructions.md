@@ -1,8 +1,12 @@
 # Nutella Tracker – Projektanforderungen & Instruktionen
 
 Dieses Dokument hält alle Anforderungen an den **Nutella Tracker** fest. Es dient als
-verbindliche Referenz für die Implementierung. Antworten/Code bitte auf Deutsch
-kommentieren, Code-Bezeichner auf Englisch.
+verbindliche Referenz für die Implementierung.
+
+**Sprachregelung:** Code-Bezeichner und die Dokumentation (README, Release Notes)
+sind **Englisch**. Code-Kommentare und die Texte der Web-UI bleiben **Deutsch** –
+inklusive der Fehlermeldungen, die über die API in der UI angezeigt werden
+(deshalb ist `ST1005` in `.golangci.yml` deaktiviert).
 
 ---
 

@@ -1,75 +1,81 @@
 # 🍫 nutella-tracker
 
 [![CI](https://github.com/daknoblo/nutella-tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/daknoblo/nutella-tracker/actions/workflows/ci.yml)
-[![Go Report Card](https://goreportcard.com/badge/github.com/daknoblo/nutella-tracker)](https://goreportcard.com/report/github.com/daknoblo/nutella-tracker)
+[![Release](https://img.shields.io/github/v/release/daknoblo/nutella-tracker)](https://github.com/daknoblo/nutella-tracker/releases/latest)
+[![Go](https://img.shields.io/github/go-mod/go-version/daknoblo/nutella-tracker)](go.mod)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![GHCR](https://img.shields.io/badge/ghcr.io-nutella--tracker-blue?logo=docker)](https://github.com/daknoblo/nutella-tracker/pkgs/container/nutella-tracker)
 
 Tracks a Nutella jar by weight, calculates the burn rate and estimates whether it lasts until your target date — with optional photo-based scale reading.
 
+> **Note on language:** the user interface is German. Code, comments and this
+> documentation are English.
+
 ## Features
 
-- Mehrere Gläser nacheinander mit eigener Mess-Historie (ein aktives Glas)
-- Wiege-Messungen (Bruttogewicht in g) → Nutzinhalt = Brutto − Tara
-- Kennzahlen: aktueller Inhalt, gesamt verbraucht, Verbrauch seit letzter Messung
-- Burnrate pro Tag **und** pro Esstag (Sa/So)
-- Reichweiten-Schätzung (voraussichtliches Leerdatum) und Soll/Ist-Abgleich
-  zum Zieldatum (ja / knapp / nein)
-- Diagramme (Chart.js): Restinhalt-Verlauf mit Soll-Linie + Prognose,
-  Verbrauch pro Messung
-- Konfigurierbar: Glasgröße (Brutto/Tara), Start- und Zieldatum
-- Persistenz in einer einzelnen JSON-Datei (atomares Schreiben), keine Datenbank
-- Keine Authentifizierung – rein für den privaten Einsatz
+- Several jars one after another, each with its own measurement history
+  (exactly one active jar)
+- Weigh-ins (gross weight in g) → net contents = gross − tare
+- Key figures: current contents, total consumed, consumption since the last
+  weigh-in
+- Burn rate per day **and** per eating day (Sat/Sun)
+- Range estimate (projected empty date) and a target comparison against the
+  target date (yes / close / no)
+- Charts (Chart.js): remaining contents over time with an ideal line and a
+  forecast, plus consumption per weigh-in
+- Configurable: jar size (gross/tare), start date and target date
+- Persisted in a single JSON file (written atomically), no database
+- No authentication — strictly for private use
 
-## Technik
+## Technology
 
-- **Go** (Standardbibliothek, HTTP-Server mit `net/http`)
-- **Web-UI** als eingebettete statische Dateien (`embed`)
-- **Diagramme** clientseitig per Chart.js (CDN)
+- **Go** (standard library, HTTP server via `net/http`)
+- **Web UI** as embedded static files (`embed`)
+- **Charts** rendered client-side with Chart.js (CDN)
 
-## Lokal starten
+## Running locally
 
 ```sh
 go run ./cmd/server
-# danach: http://localhost:8080
+# then open http://localhost:8080
 ```
 
-Konfiguration über Umgebungsvariablen:
+Configuration via environment variables:
 
-| Variable                   | Default                | Beschreibung                                        |
-| -------------------------- | ---------------------- | --------------------------------------------------- |
-| `PORT`                     | `8080`                 | HTTP-Port                                           |
-| `DATA_FILE`                | `data/nutella.json`    | Pfad zur JSON-Datendatei                            |
-| `AZURE_VISION_ENDPOINT`    | –                      | Foundry-/Azure-OpenAI-Endpoint (Foto-Erkennung)     |
-| `AZURE_VISION_KEY`         | –                      | Secret/API-Key (nur via Env, nie in der JSON)       |
-| `AZURE_VISION_MODEL`       | –                      | Deployment-/Modellname (z. B. `gpt-4o`)             |
-| `AZURE_VISION_API_VERSION` | `2024-08-01-preview`   | API-Version des Vision-Endpoints                    |
+| Variable                   | Default                | Description                                          |
+| -------------------------- | ---------------------- | ---------------------------------------------------- |
+| `PORT`                     | `8080`                 | HTTP port                                            |
+| `DATA_FILE`                | `data/nutella.json`    | Path to the JSON data file                           |
+| `AZURE_VISION_ENDPOINT`    | –                      | Foundry / Azure OpenAI endpoint (photo recognition)  |
+| `AZURE_VISION_KEY`         | –                      | Secret / API key (via env only, never in the JSON)   |
+| `AZURE_VISION_MODEL`       | –                      | Deployment / model name (e.g. `gpt-4o`)              |
+| `AZURE_VISION_API_VERSION` | `2024-08-01-preview`   | API version of the vision endpoint                   |
 
-## Foto-Erkennung (optional)
+## Photo recognition (optional)
 
-Statt das Gewicht manuell einzutippen, kann ein Foto des Waagen-Displays
-aufgenommen werden – ein Vision-Modell in **Microsoft Foundry** liest den Wert
-aus. Die Funktion erscheint nur, wenn die `AZURE_VISION_*`-Variablen gesetzt
-sind. **Die Bilder werden nicht gespeichert**; das Foto wird ausschließlich für
-die einzelne Erkennungs-Anfrage an das Modell übermittelt.
+Instead of typing the weight by hand, you can take a photo of the scale's
+display — a vision model in **Microsoft Foundry** reads the value from it. The
+feature only appears when the `AZURE_VISION_*` variables are set. **Images are
+never stored**; the photo is sent to the model for that single recognition
+request only.
 
-Ablauf: Auf dem Handy „📷 Foto aufnehmen & auslesen" tippen → das Foto geht an
-das Backend → das Backend ruft das Vision-Modell auf → der erkannte Wert wird
-ins Mess-Formular eingetragen und kann nach Prüfung gespeichert werden.
+Flow: tap "📷 Take photo & read" on your phone → the photo goes to the backend →
+the backend calls the vision model → the recognised value is filled into the
+weigh-in form, where you can check it before saving.
 
-### Einrichtung in Microsoft Foundry
+### Setting it up in Microsoft Foundry
 
-1. In Microsoft Foundry / Azure OpenAI ein **vision-fähiges Modell** (z. B.
-   `gpt-4o` oder `gpt-4o-mini`) als **Deployment** anlegen.
-2. Folgende drei Werte aus dem Portal übernehmen:
-   - **Endpoint-URL** → `AZURE_VISION_ENDPOINT`
-     (Form: `https://<ressource>.openai.azure.com`)
-   - **Secret/API-Key** → `AZURE_VISION_KEY`
-   - **Deployment-/Modellname** → `AZURE_VISION_MODEL`
-3. Optional die **API-Version** anpassen (`AZURE_VISION_API_VERSION`).
+1. In Microsoft Foundry / Azure OpenAI, create a **vision capable model**
+   (e.g. `gpt-4o` or `gpt-4o-mini`) as a **deployment**.
+2. Take these three values from the portal:
+   - **Endpoint URL** → `AZURE_VISION_ENDPOINT`
+     (form: `https://<resource>.openai.azure.com`)
+   - **Secret / API key** → `AZURE_VISION_KEY`
+   - **Deployment / model name** → `AZURE_VISION_MODEL`
+3. Optionally adjust the **API version** (`AZURE_VISION_API_VERSION`).
 
-Lokal lassen sich die Werte über eine `.env`-Datei bereitstellen
-(siehe [.env.example](.env.example)); diese ist per `.gitignore` ausgeschlossen.
+Locally these values can be provided through a `.env` file
+(see [.env.example](.env.example)); it is excluded via `.gitignore`.
 
 ## Tests
 
@@ -79,44 +85,44 @@ go test ./...
 
 ## Docker
 
-Image bauen und starten:
+Build and start the image:
 
 ```sh
 docker compose up --build
 ```
 
-Die Daten liegen im benannten Volume `nutella-data` (gemountet unter `/appdata`)
-und überleben einen Container-Neustart.
+The data lives in the named volume `nutella-data` (mounted at `/appdata`) and
+survives a container restart.
 
-Alternativ das per GitHub Actions veröffentlichte Image verwenden – dazu in der
-[docker-compose.yml](docker-compose.yml) `build: .` durch die `image:`-Zeile
-ersetzen oder [docker-compose.example.yml](docker-compose.example.yml) als
-gehärtete Vorlage nutzen.
+Alternatively use the image published by GitHub Actions — either replace
+`build: .` in [docker-compose.yml](docker-compose.yml) with the `image:` line,
+or use [docker-compose.example.yml](docker-compose.example.yml) as a hardened
+template.
 
 ## CI/CD
 
-[CI](.github/workflows/ci.yml) prüft Formatierung, Vet, Lint, Vulnerabilities,
-Tests und Build. [Release](.github/workflows/release.yml) veröffentlicht bei
-Pushes auf `main`/`develop` und Tags ein signiertes Multi-Arch-Docker-Image nach
-GHCR (`ghcr.io/<owner>/nutella-tracker`) und lädt Scan-Ergebnisse hoch.
+[CI](.github/workflows/ci.yml) checks formatting, vet, lint, vulnerabilities,
+tests and the build. [Release](.github/workflows/release.yml) publishes a signed
+multi-arch Docker image to GHCR (`ghcr.io/<owner>/nutella-tracker`) on pushes to
+`main`/`develop` and on tags, and uploads the scan results.
 
-## API (Auszug)
+## API (excerpt)
 
-| Methode & Pfad                              | Zweck                          |
-| ------------------------------------------- | ------------------------------ |
-| `GET /api/jars`                             | Alle Gläser inkl. Statistik    |
-| `POST /api/jars`                            | Neues Glas anlegen             |
-| `PUT /api/jars/{id}`                        | Glas-Stammdaten ändern         |
-| `DELETE /api/jars/{id}`                     | Glas löschen                   |
-| `POST /api/jars/{id}/activate`              | Glas aktiv setzen              |
-| `GET /api/jars/{id}/stats`                  | Statistik eines Glases         |
-| `POST /api/jars/{id}/measurements`          | Messung hinzufügen             |
-| `DELETE /api/jars/{id}/measurements/{idx}`  | Messung löschen                |
-| `GET /api/active`                           | Aktives Glas inkl. Statistik   |
-| `GET /api/config`                           | Verfügbare Features (z. B. Vision) |
-| `POST /api/vision/recognize`                | Foto (multipart `photo`) → erkanntes Gewicht |
+| Method & path                               | Purpose                                       |
+| ------------------------------------------- | --------------------------------------------- |
+| `GET /api/jars`                             | All jars including statistics                 |
+| `POST /api/jars`                            | Create a new jar                              |
+| `PUT /api/jars/{id}`                        | Change a jar's master data                    |
+| `DELETE /api/jars/{id}`                     | Delete a jar                                  |
+| `POST /api/jars/{id}/activate`              | Mark a jar as active                          |
+| `GET /api/jars/{id}/stats`                  | Statistics for a single jar                   |
+| `POST /api/jars/{id}/measurements`          | Add a weigh-in                                |
+| `DELETE /api/jars/{id}/measurements/{idx}`  | Delete a weigh-in                             |
+| `GET /api/active`                           | Active jar including statistics               |
+| `GET /api/config`                           | Available features (e.g. vision)              |
+| `POST /api/vision/recognize`                | Photo (multipart `photo`) → recognised weight |
 
 
-## Lizenz
+## License
 
-Veröffentlicht unter der [MIT-Lizenz](LICENSE).
+Released under the [MIT License](LICENSE).

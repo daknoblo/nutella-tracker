@@ -72,14 +72,15 @@ func (s *Store) save() error {
 		return fmt.Errorf("temporäre Datei anlegen: %w", err)
 	}
 	tmpName := tmp.Name()
-	defer os.Remove(tmpName) // best effort, falls Rename fehlschlägt
+	// best effort, falls Rename fehlschlägt
+	defer func() { _ = os.Remove(tmpName) }()
 
 	if _, err := tmp.Write(b); err != nil {
-		tmp.Close()
+		_ = tmp.Close()
 		return fmt.Errorf("temporäre Datei schreiben: %w", err)
 	}
 	if err := tmp.Sync(); err != nil {
-		tmp.Close()
+		_ = tmp.Close()
 		return fmt.Errorf("temporäre Datei syncen: %w", err)
 	}
 	if err := tmp.Close(); err != nil {

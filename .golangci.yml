@@ -12,6 +12,17 @@ linters:
         - (io.ReadCloser).Close
         - (*database/sql.Rows).Close
         - (*database/sql.Stmt).Close
+    misspell:
+      # Deutsche Wörter, die der englische Speller fälschlich anmeckert.
+      ignore-rules:
+        - plausibel
+    staticcheck:
+      checks:
+        - all
+        # ST1005 verlangt kleingeschriebene, englische Fehlertexte. Die
+        # Fehlermeldungen dieser App sind bewusst deutsch und werden im UI
+        # angezeigt, deshalb gilt die Regel hier nicht.
+        - -ST1005
 formatters:
   enable:
     - gofmt

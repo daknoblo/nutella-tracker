@@ -1,5 +1,10 @@
 # 🍫 nutella-tracker
 
+[![CI](https://github.com/daknoblo/nutella-tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/daknoblo/nutella-tracker/actions/workflows/ci.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/daknoblo/nutella-tracker)](https://goreportcard.com/report/github.com/daknoblo/nutella-tracker)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![GHCR](https://img.shields.io/badge/ghcr.io-nutella--tracker-blue?logo=docker)](https://github.com/daknoblo/nutella-tracker/pkgs/container/nutella-tracker)
+
 Tracks a Nutella jar by weight, calculates the burn rate and estimates whether it lasts until your target date — with optional photo-based scale reading.
 
 ## Features

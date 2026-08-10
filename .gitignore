@@ -2,6 +2,12 @@
 /bin/
 nutella-tracker
 
+# Generierte Projektseite (GitHub Pages)
+/dist/
+
+# Screenshot-Tooling
+node_modules/
+
 # Laufzeit-Daten (JSON-Datenspeicher)
 /data/
 

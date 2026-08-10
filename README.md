@@ -8,6 +8,11 @@
 
 Tracks a Nutella jar by weight, calculates the burn rate and estimates whether it lasts until your target date — with optional photo-based scale reading.
 
+**[▶ Live demo](https://daknoblo.github.io/nutella-tracker/demo/)** ·
+**[📖 Project page & screenshots](https://daknoblo.github.io/nutella-tracker/)**
+
+[![Nutella Tracker](https://daknoblo.github.io/nutella-tracker/assets/screenshots/overview.png)](https://daknoblo.github.io/nutella-tracker/demo/)
+
 > **Note on language:** the user interface is German. Code, comments and this
 > documentation are English.
 
@@ -83,6 +88,33 @@ Locally these values can be provided through a `.env` file
 go test ./...
 ```
 
+## Demo, screenshots & project page
+
+The [project page](https://daknoblo.github.io/nutella-tracker/) is a static site
+generated from this repository and published to GitHub Pages:
+
+- **Documentation** — this README, rendered to HTML
+- **Live demo** — the real web UI with generated example data
+  ([`internal/demo`](internal/demo)); the API is replaced by a static snapshot,
+  so writes are disabled
+- **Screenshot gallery** — every section of the UI, captured automatically from
+  that demo
+
+Everything is regenerated on each push to `main` by the
+[Pages workflow](.github/workflows/pages.yml), so new features show up in the
+docs, the demo and the screenshots without any manual step.
+
+Build it locally:
+
+```sh
+go run ./cmd/gensite -out dist          # docs + demo + screenshot definitions
+cd tools/screenshots && npm ci && npx playwright install chromium
+node capture.mjs --dist ../../dist      # screenshots into dist/assets/screenshots
+```
+
+The list of screenshots lives in [`internal/site/shots.go`](internal/site/shots.go)
+and is the single source of truth for both the capture run and the gallery.
+
 ## Docker
 
 Build and start the image:
@@ -105,6 +137,8 @@ template.
 tests and the build. [Release](.github/workflows/release.yml) publishes a signed
 multi-arch Docker image to GHCR (`ghcr.io/<owner>/nutella-tracker`) on pushes to
 `main`/`develop` and on tags, and uploads the scan results.
+[Pages](.github/workflows/pages.yml) rebuilds the project page, the demo and the
+screenshots on every push to `main`.
 
 ## API (excerpt)
 

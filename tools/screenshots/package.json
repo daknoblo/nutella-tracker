@@ -1,0 +1,16 @@
+{
+  "name": "nutella-tracker-screenshots",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Automated screenshots of the Nutella Tracker demo page.",
+  "scripts": {
+    "capture": "node capture.mjs"
+  },
+  "dependencies": {
+    "chart.js": "^4.4.4",
+    "chartjs-adapter-date-fns": "^3.0.0",
+    "date-fns": "^4.1.0",
+    "playwright": "^1.49.0"
+  }
+}

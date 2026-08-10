@@ -3,6 +3,9 @@
 .github
 data
 bin
+dist
+tools
+node_modules
 *.md
 .DS_Store
 .vscode

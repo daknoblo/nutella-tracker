@@ -16,6 +16,7 @@ linters:
       # Deutsche Wörter, die der englische Speller fälschlich anmeckert.
       ignore-rules:
         - plausibel
+        - projektion
     staticcheck:
       checks:
         - all
